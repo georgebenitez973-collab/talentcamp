@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Itinerario | Talent Camp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #6c757d;
+            --background-color: #f4f4f9;
+            --surface-color: #ffffff;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --border-color: #e5e5e5;
+            --team-color: #34c759;
+            --border-radius: 12px;
+            --shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .main-card {
+            background-color: var(--surface-color);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .search-section { margin-bottom: 15px; position: relative; }
+        .search-section .icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 20px; height: 20px; }
+        
+        #search-input {
+            width: 100%; padding: 12px 15px 12px 45px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 16px;
+            background-color: var(--background-color); color: var(--text-color);
+        }
+        #search-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2); }
+
+        .student-card {
+            background-color: var(--background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius);
+            margin-top: 20px; padding: 20px;
+        }
+        .student-card-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+        .student-card h3 { margin: 0; color: var(--text-color); font-weight: 600; }
+        .student-card .student-id { color: var(--text-muted); font-size: 0.9em; font-family: monospace; }
+        
+        .student-team {
+            padding: 5px 10px; border-radius: 15px; color: white; font-size: 0.8em; font-weight: 500; background-color: var(--team-color);
+        }
+        
+        .activity-list { list-style: none; padding: 0; margin-top: 15px; }
+        .activity-item { border-top: 1px solid var(--border-color); padding: 15px 0; }
+        .activity-item:first-child { border-top: none; padding-top: 5px; }
+        .activity-details { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        
+        .activity-info h4 { margin: 0 0 5px 0; font-weight: 600; }
+        .activity-info p { margin: 0; color: var(--text-muted); font-size: 0.95em; }
+
+        .activity-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .activity-actions button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .activity-actions button:hover { background-color: #005bb5; }
+
+        .config-section { display: none; margin-top: 20px; padding: 20px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--surface-color); }
+        textarea { height: 150px; background-color: var(--background-color); color: var(--text-color); width: 100%; box-sizing: border-box; }
+        #load-data-btn { margin-top: 10px; padding: 10px 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Asistente de Itinerario</h1>
+        </header>
+
+        <main class="main-card">
+            <h2>Talent Camp</h2>
+            <div class="search-section">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="search" id="search-input" placeholder="Busca por ID, nombre o equipo..." disabled>
+            </div>
+            <div id="results-container">
+                <p>Cargando datos del evento...</p>
+            </div>
+        </main>
+
+        
+        <div class="config-section">
+            <h3>Configuración (Admin)</h3>
+            <textarea id="schedule-csv-input"></textarea>
+            <button id="load-data-btn">Cargar Horario</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let students = {};
+            const TIMEZONE = 'America/Mexico_City';
+
+            // DOM Elements
+            const searchInput = document.getElementById('search-input');
+            const resultsContainer = document.getElementById('results-container');
+            const configSection = document.querySelector('.config-section');
+            const scheduleCsvInput = document.getElementById('schedule-csv-input');
+            const loadDataBtn = document.getElementById('load-data-btn');
+
+            const demoCsvContent = `,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,Salas de expertos /Bloques y horarios,,,,,,Presentación por equipos /Bloques y horarios,,,,,,,,,,,Entrevistas /Bloques y horarios,,,,,,,
+,,,Bloque 1,09:15:00,09:45:00,,,,Bloque 1,09:15:00,09:30:00,Bloque 5,10:15:00,10:30:00,Bloque 9,11:15:00,11:30:00,,,Bloque 1,09:30:00,09:45:00,,,Bloque 6,10:45:00,11:00:00
+,,,Bloque 2,10:00:00,10:30:00,,,,Bloque 2,09:30:00,09:45:00,Bloque 6,10:30:00,10:45:00,Bloque 10,11:30:00,11:45:00,,,Bloque 2,09:45:00,10:00:00,,,Bloque 7,11:00:00,11:15:00
+,,,Bloque 3,10:45:00,11:15:00,,,,Bloque 3,09:45:00,10:00:00,Bloque 7,10:45:00,11:00:00,Bloque 11,11:45:00,12:00:00,,,Bloque 3,10:00:00,10:15:00,,,Bloque 8,11:15:00,11:30:00
+,,,Bloque 4,11:30:00,12:00:00,,,,Bloque 4,10:00:00,10:15:00,Bloque 8,11:00:00,11:15:00,Bloque 12,12:00:00,12:15:00,,,Bloque 4,10:15:00,10:30:00,,,Bloque 9,11:30:00,11:45:00
+,,,,,,,,,,,,,,,,,,,,,,,Bloque 5,10:30:00,10:45:00,,,Bloque 10,11:45:00,12:00:00
+No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de Expertos 4,Sala de Expertos 5,Sala de Expertos 6,Presentación 1,Presentación 2,Presentación 3,Presentación 4,Presentación 5,Presentación 6,Presentación 7,Presentación 8,Presentación 9,Entrevista 1,Entrevista 2,Entrevista 3,Entrevista 4,Entrevista 5,Entrevista 6,Entrevista 7,Entrevista 8,Entrevista 9,Entrevista 10
+1,00565156,Alonso Farfan Mikel Javier,,10:00:00,,11:30:00,,,,,,,,09:15:00,,,,,,,,,,,,,
+2,00382999,Alvarez Santiago Cristhian Rafael,,10:00:00,,11:30:00,,,,,,,,09:15:00,,,,,,,,,,,,,
+3,00549581,Arroyo Vargas Hanna Janette,,10:00:00,,11:30:00,,,,,,,,09:15:00,,,,,,,,,,,,,
+4,00569010,Aymerich Bringas José Luis,,10:00:00,,11:30:00,,,,,,,,09:15:00,,,,,,,,,,,,,
+5,00433549,Colmenares Barrera Bruno,,10:00:00,,11:30:00,,,,,,,,09:15:00,,,,,,,,,,,,,
+6,00576469,Cruz Cruz Daira,,10:00:00,,11:30:00,,,,,,,,09:15:00,,,,,,,,,,,,,
+7,00527134,Deloya González Guillermo,,10:00:00,,11:30:00,,,,,,09:30:00,,,,,,,,,,,,,,
+8,00589649,Espejel Ramos Diego,,10:00:00,,11:30:00,,,,,,09:30:00,,,,,,,,,,,,,,
+9,00563562,García Romero Antonio Salvador,,10:00:00,,11:30:00,,,,,,09:30:00,,,,,,,,,,,,,,
+10,00561018,Gómez Sobrino José Luis,,10:00:00,,11:30:00,,,,,,09:30:00,,,,,,,,,,,,,,
+11,00558588,Huerta Mendoza Raúl,,10:00:00,,11:30:00,,,,,,09:30:00,,,,,,,,,,,,,,
+12,00476946,Merlin Hernández Aishly Ximena,,10:00:00,,11:30:00,,,,,,09:30:00,,,,,,,,,,,,,,
+13,00588640,Monroy Garcia Misael Matias,,10:00:00,,11:30:00,,,,,09:45:00,,,,,,,,,,,,,
+14,00584073,Ochoa Ramirez Julián,,10:00:00,,11:30:00,,,,,09:45:00,,,,,,,,,,,,,
+15,00560560,Olvera Quintanar Mario Santiago,,10:00:00,,11:30:00,,,,,09:45:00,,,,,,,,,,,,,
+16,00449964,Ortega Rosario Erika Gabriela,,10:00:00,,11:30:00,,,,,09:45:00,,,,,,,,,,,,,
+17,00571035,Osorio Vázquez Laura,,10:00:00,,11:30:00,,,,,09:45:00,,,,,,,,,,,,,
+18,00566072,Payalaf de Gasperin Oscar Daniel,,10:00:00,,11:30:00,,,,,09:45:00,,,,,,,,,,,,,
+19,00483215,Pérez Amezcua Travis David,,10:00:00,,11:30:00,,,,10:00:00,,,,,,,,,,,,
+20,00579993,Ramirez Castañón Gabriela,,10:00:00,,11:30:00,,,,10:00:00,,,,,,,,,,,,
+21,00562176,Ramírez Hernández José Vladimir,,10:00:00,,11:30:00,,,,10:00:00,,,,,,,,,,,,
+22,00565874,Ramírez Rodríguez Diego Antonio,,10:00:00,,11:30:00,,,,10:00:00,,,,,,,,,,,,
+23,00552919,Rámos Cano Diego Estevan,,10:00:00,,11:30:00,,,,10:00:00,,,,,,,,,,,,
+24,00561342,Robles Muñiz Valeria,,10:00:00,,11:30:00,,,,10:00:00,,,,,,,,,,,,
+25,00556562,Rodriguez Romero Mayte,,10:00:00,,11:30:00,,,,,10:15:00,,,,,,,,,,,
+26,00514530,Rojas García Lucia,,10:00:00,,11:30:00,,,,,10:15:00,,,,,,,,,,,
+27,00552094,Sánchez Rojas Emanuel,,10:00:00,,11:30:00,,,,,10:15:00,,,,,,,,,,,
+28,00554124,Santiago Morales Arantza Gabriela,,10:00:00,,11:30:00,,,,,10:15:00,,,,,,,,,,,
+29,00478311,Torres Arce Emiliano,,10:00:00,,11:30:00,,,,,10:15:00,,,,,,,,,,,
+30,00494379,Vázquez Falcón lan Moisés,,10:00:00,,11:30:00,,,,,10:15:00,,,,,,,,,,,
+31,00578939,Bello Martinez Emiliano,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
+32,00524719,de la Rosa Burgos Alvaro Alejandro,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
+33,00523828,Diaz Mayo José Pablo,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
+34,00497686,Jiménez Gómez Omar Michel,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
+35,00464515,Monterrosas Mirón Karla Antonia,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
+36,00525597,Tejeda Flores Zara Valentina,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,`;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('admin')) {
+                configSection.style.display = 'block';
+            }
+
+            function initApp() {
+                scheduleCsvInput.value = demoCsvContent;
+                loadAndProcessSchedule();
+                searchInput.addEventListener('input', handleSearch);
+                loadDataBtn.addEventListener('click', loadAndProcessSchedule);
+
+                const studentIdFromUrl = urlParams.get('id');
+                if (studentIdFromUrl) {
+                    searchInput.value = studentIdFromUrl;
+                    handleSearch();
+                }
+            }
+
+            function loadAndProcessSchedule() {
+                students = {};
+                
+                try {
+                    const lines = scheduleCsvInput.value.trim().split('\n');
+                    const studentDataLines = lines.slice(15);
+
+                    const activityColumns = {
+                        networking: { title: 'Networking con Expositores', range: [3, 8], duration: 30, location: 'Pabellón Principal' },
+                        presentation: { title: 'Presentación de Proyectos (Equipo)', range: [9, 17], duration: 15, location: 'Sala Asignada' },
+                        interview: { title: 'Entrevista de Talento (Simulación)', range: [18, 27], duration: 15, location: 'Con Entrevistador Asignado' }
+                    };
+
+                    let teamCounter = 1;
+                    let studentCounter = 0;
+
+                    studentDataLines.forEach(line => {
+                        const cols = line.split(',');
+                        const studentId = cols[1]?.trim();
+                        const studentName = cols[2]?.trim();
+
+                        if (!studentId || !studentName) return;
+                        
+                        if (studentCounter % 6 === 0 && studentCounter > 0) {
+                            teamCounter++;
+                        }
+                        
+                        students[studentId] = { 
+                            id: studentId, 
+                            name: studentName, 
+                            activities: [], 
+                            team: teamCounter 
+                        };
+
+                        for (const key in activityColumns) {
+                            const config = activityColumns[key];
+                            for (let i = config.range[0]; i <= config.range[1]; i++) {
+                                const timeStr = cols[i]?.trim();
+                                if (timeStr && timeStr.includes(':')) {
+                                    const [hours, minutes, seconds] = timeStr.split(':');
+                                    const startDate = new Date();
+                                    startDate.setHours(hours, minutes, seconds || 0, 0);
+
+                                    const endDate = new Date(startDate.getTime() + config.duration * 60000);
+
+                                    students[studentId].activities.push({
+                                        title: config.title,
+                                        location: config.location,
+                                        start: startDate.toISOString(),
+                                        end: endDate.toISOString()
+                                    });
+                                    break; 
+                                }
+                            }
+                        }
+                        students[studentId].activities.sort((a,b) => new Date(a.start) - new Date(b.start));
+                        studentCounter++;
+                    });
+
+                } catch (error) { console.error("Error parsing CSV:", error); }
+            
+                searchInput.disabled = false;
+                
+                const studentIdFromUrl = new URLSearchParams(window.location.search).get('id');
+                if (studentIdFromUrl) {
+                    searchInput.value = studentIdFromUrl;
+                }
+                handleSearch();
+            }
+
+            function handleSearch() {
+                const query = searchInput.value;
+                if (!query) {
+                    resultsContainer.innerHTML = '<p>Busca tu itinerario por ID, nombre o equipo.<br>O escanea el código QR de tu gafete.</p>';
+                    return;
+                }
+                const normalizedQuery = normalizeString(query);
+                const filteredStudents = Object.values(students).filter(s => 
+                    normalizeString(s.name).includes(normalizedQuery) ||
+                    normalizeString(s.id).includes(normalizedQuery) ||
+                    (s.team && s.team.toString() === normalizedQuery)
+                );
+                renderResults(filteredStudents);
+            }
+            
+            function renderResults(studentList) {
+                if (studentList.length === 0) {
+                    resultsContainer.innerHTML = '<p>No se encontraron resultados.</p>';
+                    return;
+                }
+                resultsContainer.innerHTML = studentList.map(student => renderStudentCard(student)).join('');
+            }
+            
+            function renderStudentCard(student) {
+                const activitiesHtml = student.activities.length > 0 ?
+                    `<ul class="activity-list">${student.activities.map(activity => {
+                        const activityData = { ...activity, studentName: student.name };
+                        return `
+                            <li class="activity-item">
+                                <div class="activity-details">
+                                    <div class="activity-info">
+                                        <h4>${activity.title}</h4>
+                                        <p>${activity.location}</p>
+                                        <p>${formatDateRange(activity.start, activity.end)}</p>
+                                    </div>
+                                    <div class="activity-actions">
+                                        <button title="Crear Recordatorio" data-activity-ics='${JSON.stringify(activityData)}'>
+                                            <svg class="icon" style="width: 16px; height: 16px; margin-right: 5px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+                                            Agendar
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>`;
+                    }).join('')}</ul>` : '<p>Sin actividades asignadas.</p>';
+
+                return `
+                    <div class="student-card">
+                        <div class="student-card-header">
+                            <div>
+                                <h3>${student.name}</h3>
+                                <span class="student-id">(${student.id})</span>
+                            </div>
+                            <span class="student-team">Equipo ${student.team}</span>
+                        </div>
+                        ${activitiesHtml}
+                    </div>`;
+            }
+
+            resultsContainer.addEventListener('click', e => {
+                const button = e.target.closest('[data-activity-ics]');
+                if(button) {
+                    const activity = JSON.parse(button.dataset.ics);
+                    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TalentCamp//ES\r\nBEGIN:VEVENT\r\nUID:${Date.now()}@talentcamp\r\nDTSTAMP:${formatICSDate(new Date())}\r\nDTSTART:${formatICSDate(new Date(activity.start))}\r\nDTEND:${formatICSDate(new Date(activity.end))}\r\nSUMMARY:${activity.title}\r\nLOCATION:${activity.location}\r\nDESCRIPTION:Itinerario para ${activity.studentName}\r\nBEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Recordatorio\r\nTRIGGER:-PT15M\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+                    downloadBlob(ics, `${activity.title.replace(/\s/g, '_')}.ics`, 'text/calendar');
+                }
+            });
+
+            function normalizeString(str) { return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+            function formatDateRange(start, end) { 
+                const opts = { hour: '2-digit', minute: '2-digit', timeZone: TIMEZONE };
+                return `${new Date(start).toLocaleTimeString('es-MX', opts)} - ${new Date(end).toLocaleTimeString('es-MX', opts)}`;
+            }
+            function formatICSDate(date) { return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; }
+            function downloadBlob(content, fileName, contentType) {
+                const blob = new Blob([content], { type: contentType });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                link.click();
+            }
+
+            initApp();
+        });
+    </script>
+</body>
+</html>
