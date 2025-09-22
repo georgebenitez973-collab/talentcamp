@@ -287,11 +287,21 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
                     return;
                 }
                 const normalizedQuery = normalizeString(query);
-                const filteredStudents = Object.values(students).filter(s => 
-                    normalizeString(s.name).includes(normalizedQuery) ||
-                    normalizeString(s.id).includes(normalizedQuery) ||
-                    (s.team && s.team.toString() === normalizedQuery)
-                );
+                const searchTerms = normalizedQuery.split(' ').filter(Boolean);
+
+                const filteredStudents = Object.values(students).filter(student => {
+                    const normalizedName = normalizeString(student.name);
+                    const normalizedId = normalizeString(student.id);
+                    const teamString = student.team ? student.team.toString() : '';
+
+                    // Check for ID or Team match (allows partial ID search)
+                    if (normalizedId.includes(normalizedQuery) || teamString === normalizedQuery) {
+                        return true;
+                    }
+
+                    // Check for out-of-order name match
+                    return searchTerms.every(term => normalizedName.includes(term));
+                });
                 renderResults(filteredStudents);
             }
             
