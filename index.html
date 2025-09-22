@@ -317,6 +317,7 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
                 const activitiesHtml = student.activities.length > 0 ?
                     `<ul class="activity-list">${student.activities.map(activity => {
                         const activityData = { ...activity, studentName: student.name };
+                        const encodedActivityData = encodeURIComponent(JSON.stringify(activityData));
                         return `
                             <li class="activity-item">
                                 <div class="activity-details">
@@ -326,7 +327,7 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
                                         <p>${formatDateRange(activity.start, activity.end)}</p>
                                     </div>
                                     <div class="activity-actions">
-                                        <button title="Crear Recordatorio" data-activity-ics='${JSON.stringify(activityData)}'>
+                                        <button title="Crear Recordatorio" data-activity-ics='${encodedActivityData}'>
                                             <svg class="icon" style="width: 16px; height: 16px; margin-right: 5px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
                                             Agendar
                                         </button>
@@ -351,7 +352,7 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
             resultsContainer.addEventListener('click', e => {
                 const button = e.target.closest('[data-activity-ics]');
                 if(button) {
-                    const activity = JSON.parse(button.dataset.ics);
+                    const activity = JSON.parse(decodeURIComponent(button.dataset.ics));
                     const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TalentCamp//ES\r\nBEGIN:VEVENT\r\nUID:${Date.now()}@talentcamp\r\nDTSTAMP:${formatICSDate(new Date())}\r\nDTSTART:${formatICSDate(new Date(activity.start))}\r\nDTEND:${formatICSDate(new Date(activity.end))}\r\nSUMMARY:${activity.title}\r\nLOCATION:${activity.location}\r\nDESCRIPTION:Itinerario para ${activity.studentName}\r\nBEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Recordatorio\r\nTRIGGER:-PT15M\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR`;
                     downloadBlob(ics, `${activity.title.replace(/\s/g, '_')}.ics`, 'text/calendar');
                 }
