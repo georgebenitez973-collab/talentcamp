@@ -17,6 +17,7 @@
             --text-muted: #6c757d;
             --border-color: #e5e5e5;
             --team-color: #34c759;
+            --danger-color: #dc3545;
             --border-radius: 12px;
             --shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
         }
@@ -103,8 +104,17 @@
         .activity-actions .btn:hover { background-color: #005bb5; }
         
         .config-section { display: none; margin-top: 20px; padding: 20px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--surface-color); }
-        textarea { height: 150px; background-color: var(--background-color); color: var(--text-color); width: 100%; box-sizing: border-box; }
-        #load-data-btn { margin-top: 10px; padding: 10px 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; }
+        textarea { height: 150px; background-color: var(--background-color); color: var(--text-color); width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .admin-controls button { margin-top: 10px; margin-right: 10px; padding: 10px 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .admin-controls button.secondary { background-color: var(--secondary-color); }
+
+        #admin-table-container { margin-top: 20px; max-height: 400px; overflow-y: auto; }
+        #admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        #admin-table th, #admin-table td { border: 1px solid var(--border-color); padding: 8px; text-align: left; }
+        #admin-table th { background-color: var(--background-color); position: sticky; top: 0; }
+        #admin-table td[contenteditable="true"] { background-color: #fef9e7; }
+        #admin-table .delete-row-btn { background: none; border: none; color: var(--danger-color); cursor: pointer; font-size: 18px; }
+        #admin-status { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; font-weight: 500; display: none; background-color: var(--team-color); color: white; }
 
     </style>
 </head>
@@ -118,7 +128,7 @@
             <h2>Talent Camp</h2>
             <div class="search-section">
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="search" id="search-input" placeholder="Busca por ID, nombre o equipo..." disabled>
+                <input type="search" id="search-input" placeholder="Busca por ID o nombre..." disabled>
             </div>
             <div id="results-container">
                 <p>Cargando datos del evento...</p>
@@ -128,8 +138,19 @@
         
         <div class="config-section">
             <h3>Configuración (Admin)</h3>
-            <textarea id="schedule-csv-input"></textarea>
-            <button id="load-data-btn">Cargar Horario</button>
+            <h4>Importar Alumnos desde CSV</h4>
+            <textarea id="schedule-csv-input" placeholder="Pega aquí el contenido de tu archivo CSV para la importación inicial."></textarea>
+            <div class="admin-controls">
+                <button id="import-csv-btn">Importar CSV a Editor</button>
+            </div>
+            
+            <h4>Editor de Alumnos y Horarios</h4>
+            <div id="admin-table-container"></div>
+            <div class="admin-controls">
+                <button id="add-student-btn">Añadir Alumno</button>
+                <button id="save-data-btn" class="secondary">Guardar y Actualizar Itinerarios</button>
+            </div>
+            <div id="admin-status"></div>
         </div>
     </div>
 
@@ -137,13 +158,18 @@
         document.addEventListener('DOMContentLoaded', () => {
             let students = {};
             const TIMEZONE = 'America/Mexico_City';
+            const STUDENTS_STORAGE_KEY = 'talentCampStudentsData';
 
             // DOM Elements
             const searchInput = document.getElementById('search-input');
             const resultsContainer = document.getElementById('results-container');
             const configSection = document.querySelector('.config-section');
             const scheduleCsvInput = document.getElementById('schedule-csv-input');
-            const loadDataBtn = document.getElementById('load-data-btn');
+            const importCsvBtn = document.getElementById('import-csv-btn');
+            const adminTableContainer = document.getElementById('admin-table-container');
+            const addStudentBtn = document.getElementById('add-student-btn');
+            const saveDataBtn = document.getElementById('save-data-btn');
+            const adminStatus = document.getElementById('admin-status');
 
             const demoCsvContent = `,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -189,101 +215,212 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
 32,00524719,de la Rosa Burgos Alvaro Alejandro,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
 33,00523828,Diaz Mayo José Pablo,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
 34,00497686,Jiménez Gómez Omar Michel,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
-35,00464515,Monterrosas Mirón Karla Antonia,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
+35,0046415,Monterrosas Mirón Karla Antonia,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,
 36,00525597,Tejeda Flores Zara Valentina,09:15:00,,,10:45:00,,,,,,,,,,11:15:00,,,,,,,,,,,,`;
 
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('admin')) {
-                configSection.style.display = 'block';
-            }
+            const isAdmin = urlParams.has('admin');
 
             function initApp() {
-                scheduleCsvInput.value = demoCsvContent;
-                loadAndProcessSchedule();
-                searchInput.addEventListener('input', handleSearch);
-                loadDataBtn.addEventListener('click', loadAndProcessSchedule);
+                if (isAdmin) {
+                    configSection.style.display = 'block';
+                }
 
-                const studentIdFromUrl = urlParams.get('id');
-                if (studentIdFromUrl) {
-                    searchInput.value = studentIdFromUrl;
-                    handleSearch();
+                loadInitialData();
+                searchInput.addEventListener('input', handleSearch);
+                importCsvBtn.addEventListener('click', importCsvToEditor);
+                addStudentBtn.addEventListener('click', addStudentRow);
+                saveDataBtn.addEventListener('click', saveAndProcessData);
+
+                adminTableContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-row-btn')) {
+                        e.target.closest('tr').remove();
+                    }
+                });
+            }
+            
+            function loadInitialData() {
+                const savedData = localStorage.getItem(STUDENTS_STORAGE_KEY);
+                let studentList = [];
+                if (savedData) {
+                    studentList = JSON.parse(savedData);
+                } else {
+                    studentList = parseCsvContent(demoCsvContent);
+                }
+
+                if (isAdmin) {
+                    renderAdminTable(studentList);
+                }
+                processSchedules(studentList);
+            }
+
+            function parseCsvContent(csvContent) {
+                const studentList = [];
+                const lines = csvContent.trim().split('\n');
+                const studentDataLines = lines.slice(15);
+                
+                const activityColumns = {
+                    networking: { range: [3, 8] },
+                    presentation: { range: [9, 17] },
+                    interview: { range: [18, 27] }
+                };
+                
+                let teamCounter = 1;
+                let studentCounter = 0;
+
+                studentDataLines.forEach(line => {
+                    const cols = line.split(',');
+                    const studentId = cols[1]?.trim();
+                    const studentName = cols[2]?.trim();
+                    if (!studentId || !studentName) return;
+
+                    if (studentCounter > 0 && studentCounter % 6 === 0) {
+                        teamCounter++;
+                    }
+                    
+                    const studentData = { id: studentId, name: studentName, team: teamCounter, presentationTime: '', networkingTime: '', interviewTime: '' };
+
+                    for (const key in activityColumns) {
+                        const config = activityColumns[key];
+                        for (let i = config.range[0]; i <= config.range[1]; i++) {
+                            const timeStr = cols[i]?.trim();
+                            if (timeStr && timeStr.includes(':')) {
+                                studentData[`${key}Time`] = timeStr.substring(0, 5); // HH:MM
+                                break;
+                            }
+                        }
+                    }
+
+                    studentList.push(studentData);
+                    studentCounter++;
+                });
+                return studentList;
+            }
+            
+            function importCsvToEditor() {
+                const studentList = parseCsvContent(scheduleCsvInput.value);
+                renderAdminTable(studentList);
+            }
+            
+            function renderAdminTable(studentList) {
+                const table = document.createElement('table');
+                table.id = 'admin-table';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Equipo</th>
+                            <th>Presentación (HH:MM)</th>
+                            <th>Networking (HH:MM)</th>
+                            <th>Entrevista (HH:MM)</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${studentList.map(s => `
+                            <tr>
+                                <td contenteditable="true">${s.id}</td>
+                                <td contenteditable="true">${s.name}</td>
+                                <td contenteditable="true">${s.team}</td>
+                                <td contenteditable="true">${s.presentationTime}</td>
+                                <td contenteditable="true">${s.networkingTime}</td>
+                                <td contenteditable="true">${s.interviewTime}</td>
+                                <td><button class="delete-row-btn">&times;</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                adminTableContainer.innerHTML = '';
+                adminTableContainer.appendChild(table);
+            }
+            
+            function addStudentRow() {
+                const tableBody = document.querySelector('#admin-table tbody');
+                if (tableBody) {
+                    const newRow = tableBody.insertRow();
+                    newRow.innerHTML = `
+                        <td contenteditable="true">Nuevo ID</td>
+                        <td contenteditable="true">Nombre Apellido</td>
+                        <td contenteditable="true">1</td>
+                        <td contenteditable="true">09:00</td>
+                        <td contenteditable="true">10:00</td>
+                        <td contenteditable="true">11:00</td>
+                        <td><button class="delete-row-btn">&times;</button></td>
+                    `;
                 }
             }
 
-            function loadAndProcessSchedule() {
+            function saveAndProcessData() {
+                const studentList = [];
+                const tableRows = document.querySelectorAll('#admin-table tbody tr');
+                tableRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    studentList.push({
+                        id: cells[0].textContent.trim(),
+                        name: cells[1].textContent.trim(),
+                        team: parseInt(cells[2].textContent.trim(), 10) || 0,
+                        presentationTime: cells[3].textContent.trim(),
+                        networkingTime: cells[4].textContent.trim(),
+                        interviewTime: cells[5].textContent.trim()
+                    });
+                });
+                
+                localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(studentList));
+                processSchedules(studentList);
+            }
+
+            function processSchedules(studentList) {
                 students = {};
                 
-                try {
-                    const lines = scheduleCsvInput.value.trim().split('\n');
-                    const studentDataLines = lines.slice(15);
+                const activityConfigs = {
+                    presentationTime: { title: 'Presentación de Proyectos (Equipo)', duration: 15, location: 'Sala Asignada' },
+                    networkingTime: { title: 'Networking con Expositores', duration: 30, location: 'Pabellón Principal' },
+                    interviewTime: { title: 'Entrevista de Talento (Simulación)', duration: 15, location: 'Con Entrevistador Asignado' }
+                };
 
-                    const activityColumns = {
-                        networking: { title: 'Networking con Expositores', range: [3, 8], duration: 30, location: 'Pabellón Principal' },
-                        presentation: { title: 'Presentación de Proyectos (Equipo)', range: [9, 17], duration: 15, location: 'Sala Asignada' },
-                        interview: { title: 'Entrevista de Talento (Simulación)', range: [18, 27], duration: 15, location: 'Con Entrevistador Asignado' }
-                    };
-
-                    let teamCounter = 1;
-                    let studentCounter = 0;
-
-                    studentDataLines.forEach(line => {
-                        const cols = line.split(',');
-                        const studentId = cols[1]?.trim();
-                        const studentName = cols[2]?.trim();
-
-                        if (!studentId || !studentName) return;
-                        
-                        if (studentCounter % 6 === 0 && studentCounter > 0) {
-                            teamCounter++;
+                studentList.forEach(studentInfo => {
+                    const studentActivities = [];
+                    for (const timeKey in activityConfigs) {
+                        const timeStr = studentInfo[timeKey];
+                        if (timeStr && timeStr.includes(':')) {
+                            const config = activityConfigs[timeKey];
+                            const [hours, minutes] = timeStr.split(':');
+                            const startDate = new Date();
+                            startDate.setHours(hours, minutes, 0, 0);
+                            const endDate = new Date(startDate.getTime() + config.duration * 60000);
+                            studentActivities.push({
+                                title: config.title,
+                                location: config.location,
+                                start: startDate.toISOString(),
+                                end: endDate.toISOString()
+                            });
                         }
-                        
-                        students[studentId] = { 
-                            id: studentId, 
-                            name: studentName, 
-                            activities: [], 
-                            team: teamCounter 
-                        };
-
-                        for (const key in activityColumns) {
-                            const config = activityColumns[key];
-                            for (let i = config.range[0]; i <= config.range[1]; i++) {
-                                const timeStr = cols[i]?.trim();
-                                if (timeStr && timeStr.includes(':')) {
-                                    const [hours, minutes, seconds] = timeStr.split(':');
-                                    const startDate = new Date();
-                                    startDate.setHours(hours, minutes, seconds || 0, 0);
-
-                                    const endDate = new Date(startDate.getTime() + config.duration * 60000);
-
-                                    students[studentId].activities.push({
-                                        title: config.title,
-                                        location: config.location,
-                                        start: startDate.toISOString(),
-                                        end: endDate.toISOString()
-                                    });
-                                    break; 
-                                }
-                            }
-                        }
-                        students[studentId].activities.sort((a,b) => new Date(a.start) - new Date(b.start));
-                        studentCounter++;
-                    });
-
-                } catch (error) { console.error("Error parsing CSV:", error); }
+                    }
+                    studentActivities.sort((a,b) => new Date(a.start) - new Date(b.start));
+                    students[studentInfo.id] = { ...studentInfo, activities: studentActivities };
+                });
             
                 searchInput.disabled = false;
-                
-                const studentIdFromUrl = new URLSearchParams(window.location.search).get('id');
-                if (studentIdFromUrl) {
-                    searchInput.value = studentIdFromUrl;
-                }
                 handleSearch();
+
+                if (isAdmin) {
+                    showAdminStatus('¡Datos guardados y actualizados!');
+                }
+            }
+            
+            function showAdminStatus(message) {
+                adminStatus.textContent = message;
+                adminStatus.style.display = 'block';
+                setTimeout(() => {
+                    adminStatus.style.display = 'none';
+                }, 3000);
             }
 
             function handleSearch() {
                 const query = searchInput.value;
                 if (!query) {
-                    resultsContainer.innerHTML = '<p>Busca tu itinerario por ID, nombre o equipo.<br>O escanea el código QR de tu gafete.</p>';
+                    resultsContainer.innerHTML = '<p>Busca tu itinerario por ID o nombre.</p>';
                     return;
                 }
                 const normalizedQuery = normalizeString(query);
@@ -292,14 +429,10 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
                 const filteredStudents = Object.values(students).filter(student => {
                     const normalizedName = normalizeString(student.name);
                     const normalizedId = normalizeString(student.id);
-                    const teamString = student.team ? student.team.toString() : '';
 
-                    // Check for ID or Team match (allows partial ID search)
-                    if (normalizedId.includes(normalizedQuery) || teamString === normalizedQuery) {
+                    if (normalizedId.includes(normalizedQuery)) {
                         return true;
                     }
-
-                    // Check for out-of-order name match
                     return searchTerms.every(term => normalizedName.includes(term));
                 });
                 renderResults(filteredStudents);
@@ -327,7 +460,7 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
                                     </div>
                                     <div class="activity-actions">
                                         <a href="${generateGoogleCalendarUrl(activityData)}" target="_blank" rel="noopener noreferrer" class="btn" title="Agregar a Google Calendar">
-                                             <svg class="icon" style="width: 16px; height: 16px; margin-right: 5px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M12 14v4"/><path d="M10 16h4"/></svg>
+                                             <svg class="icon" style="width: 16px; height: 16px; margin-right: 5px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M12 14v4"/><path d="M10 16h4"/></svg>
                                             Google Calendar
                                         </a>
                                     </div>
@@ -368,3 +501,4 @@ No.,ID,Nombre,Sala de Expertos 1,Sala de Expertos 2,Sala de Expertos 3,Sala de E
     </script>
 </body>
 </html>
+
