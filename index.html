@@ -200,7 +200,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             let students = {};
             const TIMEZONE = 'America/Mexico_City';
-            const MASTER_DATA_KEY = 'talentCampMasterData';
+            // ***** CAMBIO CLAVE: Se cambió el nombre de la llave para forzar la actualización de datos *****
+            const MASTER_DATA_KEY = 'talentCampMasterData_v3';
 
             // DOM Elements
             const searchInput = document.getElementById('search-input');
@@ -223,10 +224,10 @@
                     // --- Equipo 1 (Del Rio) ---
                     { id: '578939', name: 'Bello Martinez Emiliano', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '9:55-10:15', entrevistador: 1, networkingTime: '10:25-11:00', expositor: 1 },
                     { id: '524719', name: 'de la Rosa Burgos Alvaro Alejandro', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '9:55-10:15', entrevistador: 2, networkingTime: '10:25-11:00', expositor: 2 },
-                    { id: '523828', name: 'Diaz Mayo José Pablo', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '9:55-10:15', entrevistador: 3, networkingTime: '10:25-11:00', expositor: 3 }, // Corregido team de 7 a 1
+                    { id: '523828', name: 'Diaz Mayo José Pablo', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '9:55-10:15', entrevistador: 3, networkingTime: '10:25-11:00', expositor: 3 },
                     { id: '497686', name: 'Jiménez Gómez Omar Michel', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '9:55-10:15', entrevistador: 4, networkingTime: '10:25-11:00', expositor: 4 },
                     { id: '464515', name: 'Monterrosas Mirón Karla Antonia', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '9:55-10:15', entrevistador: 5, networkingTime: '10:25-11:00', expositor: 5 },
-                    { id: '545786', name: 'Peniche Pérez Esteban', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '10:15-10:35', entrevistador: 1, networkingTime: '10:25-11:00', expositor: 1 }, // Corregido team de 7 a 1
+                    { id: '545786', name: 'Peniche Pérez Esteban', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '10:15-10:35', entrevistador: 1, networkingTime: '10:25-11:00', expositor: 1 },
                     { id: '525597', name: 'Tejeda Flores Zara Valentina', profesor: 'Del Rio', team: 1, presentationTime: '9:15-9:35', sala: 'A', interviewTime: '10:15-10:35', entrevistador: 2, networkingTime: '10:25-11:00', expositor: 2 },
                     // --- Equipo 2 (Lechuga) ---
                     { id: '543019', name: 'Briones Quiyono Ana Sofia', profesor: 'Lechuga', team: 2, presentationTime: '9:15-9:35', sala: 'B', interviewTime: '9:55-10:15', entrevistador: 6, networkingTime: '10:25-11:00', expositor: 3 },
